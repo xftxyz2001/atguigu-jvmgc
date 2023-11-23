@@ -1,0 +1,531 @@
+第7篇-JVM性能监控篇\n讲师-宋红康
+	01-JVM监控及诊断工具-命令行篇
+		面试题
+		01-概述
+			简单命令行工具
+		02-jps：查看正在运行的Java进程
+			基本情况
+			测试
+			基本语法
+				options参数
+				hostid参数
+		03-jstat：查看JVM统计信息
+			基本情况
+			基本语法
+				option参数
+					-gc
+						新生代相关
+							S0C是第一个幸存者区的大小（字节）
+							S1C是第二个幸存者区的大小（字节）
+							S0U是第一个幸存者区已使用的大小（字节）
+							S1U是第二个幸存者区已使用的大小（字节）
+							EC是Eden空间的大小（字节）
+							EU是Eden空间已使用大小（字节）
+						老年代相关
+							OC是老年代的大小（字节）
+							OU是老年代已使用的大小（字节）
+						方法区（元空间）相关
+							MC是方法区的大小
+							MU是方法区已使用的大小
+							CCSC是压缩类空间的大小
+							CCSU是压缩类空间已使用的大小
+						其它
+							YGC是指从应用程序启动到采样时young gc次数
+							YGCT是指从应用程序启动到采样时young gc消耗的时间（秒）
+							FGC是指从应用程序启动到采样时full gc次数
+							FGCT是指从应用程序启动到采样时full gc消耗的时间（秒）
+							GCT是指从应用程序启动到采样时gc的总时间
+				interval参数
+					用于指定输出统计数据的周期，单位为毫秒。即：查询间隔
+				count参数
+					用于指定查询的总次数
+				-t参数
+					可以在输出信息前加上一个Timestamp列，显示程序的运行时间。单位：秒
+					经验
+				-h参数
+					可以在周期性数据输岀时，输出多少行数据后输出一个表头信息
+			补充
+		04-jinfo：实时查看和修改JVM配置参数
+			基本情况
+			基本语法
+				查看
+					jinfo -sysprops PID
+						可以查看由System.getProperties()取得的参数
+					jinfo -flags PID
+						查看曾经赋过值的一些参数
+					jinfo -flag 具体参数 PID
+						查看某个java进程的具体参数的值
+				修改
+					针对boolean类型
+						jinfo -flag [+|-]具体参数 PID
+					针对非boolean类型
+						jinfo -flag 具体参数=具体参数值 PID
+			拓展
+				java -XX:+PrintFlagsInitial
+					查看所有JVM参数启动的初始值
+				java -XX:+PrintFlagsFinal
+					查看所有JVM参数的最终值
+				java -XX:+PrintCommandLineFlags
+					查看那些已经被用户或者JVM设置过的详细的XX参数的名称和值
+		05-jmap：导出内存映像文件&内存使用情况
+			基本情况
+			基本语法
+				-dump
+					生成Java堆转储快照：dump文件
+					特别的：-dump:live只保存堆中的存活对象
+				-heap
+					输出整个堆空间的详细信息，包括GC的使用、堆配置信息，以及内存的使用信息等
+				-histo
+					输出堆中对象的统计信息，包括类、实例数量和合计容量
+					特别的：-histo:live只统计堆中的存活对象
+				-permstat
+					以ClassLoader为统计口径输出永久代的内存状态信息
+					仅linux/solaris平台有效
+				-finalizerinfo
+					显示在F-Queue中等待Finalizer线程执行finalize方法的对象
+					仅linux/solaris平台有效
+				-F
+					当虚拟机进程对-dump选项没有任何响应时，可使用此选项强制执行生成dump文件
+					仅linux/solaris平台有效
+				-h | -help
+					jmap工具使用的帮助命令
+				-J <flag>
+					传递参数给jmap启动的jvm
+			使用1：导出内存映像文件
+				手动的方式
+					jmap -dump:format=b,file=<filename.hprof> <pid>
+					jmap -dump:live,format=b,file=<filename.hprof> <pid>
+				自动的方式
+					-XX:+HeapDumpOnOutOfMemoryError
+					-XX:HeapDumpPath=<filename.hprof>
+			使用2：显示堆内存相关信息
+				jmap -heap pid
+				-jmap -histo pid
+			使用3：其它作用
+				jmap -permstat pid
+					查看系统的ClassLoader信息
+				jmap -finalizerinfo
+					査看堆积在finalizer队列中的对象
+			小结
+		06-jhat：JDK自带堆分析工具
+			基本情况
+			基本语法
+				option参数：-stack false|true
+					关闭 | 打开对象分配调用栈跟踪
+				option参数：-refs false|true
+					关闭 | 打开对象引用跟踪
+				option参数：-port port-number
+					设置jhat HTTP Server的端口号，默认7000
+				option参数：-exclude exclude-file
+					执行对象查询时需要排除的数据成员列表文件
+				option参数：-baseline exclude-file
+					指定一个基准堆转储
+				option参数：-debug int
+					设置debug级别
+				option参数：-version
+					启动后显示版本信息就退出
+				option参数：-J<flag>
+					传入启动参数，比如-J -Xmx512m
+		07-jstack：打印JVM中线程快照
+			面试题
+			基本情况
+			基本语法
+				option参数：-F
+					当正常输出的请求不被响应时，强制输出线程堆栈
+				option参数：-l
+					除堆栈外，显示关于锁的附加信息
+				option参数：-m
+					如果调用到本地方法的话，可以显示C/C++的堆栈
+				option参数：-h
+					帮助操作
+		08-jcmd：多功能命令行
+			基本情况
+			基本语法
+				jcmd -l
+					列出所有的JVM进程
+				jcmd pid help
+					针对指定的进程，列出支持的所有命令
+				jcmd pid 具体命令
+					显示指定进程的指令命令的数据
+		09-jstatd：远程主机信息收集
+	02-JVM监控及诊断工具-GUI篇
+		01-工具概述
+		02-jConsole
+			基本概述
+			启动
+				jdk/bin目录下，启动jconsole.exe命令即可
+				不需要使用jps命令来查询
+			三种连接方式
+				Local
+					使用JConsole连接一个正在本地系统运行的JVM,并且执行程序的和运行JConsole的需要\n是同一个用户。JConsole使用文件系统的授权通过RMI连接器连接到平台的MBean服务器上。\n这种从本地连接的监控能力只有Sun的JDK具有。
+				Remote
+					使用下面的URL通过RMI连接器连接到一个JMX代理，service:jmx:rmi:///jndi/rmi://hostName:portNum/jmxrmi。\nJConsole为建立连接，需要在环境变量中设置mx.remote.credentials来指定用户名和密码，从而进行授权。
+				Advanced
+					使用一个特殊的URL连接JMX代理。一般情况使用自己定制的连接器而不是RMI提供的连接器\n来连接JMX代理，或者是一个使用JDK1.4的实现了JMX和JMX Rmote的应用。
+			主要作用
+				监控内存
+				监控线程
+				监控死锁
+				类加载与虚拟机信息
+		03-Visual VM
+			基本概述
+			插件的安装
+			连接方式
+				本地连接
+					监控本地Java进程的CPU、类、线程等
+				远程连接
+					1-确定远程服务器的ip地址
+					2-添加JMX（通过JMX技术具体监控远端服务器哪个Java进程
+					3-修改bin/catalina.sh文件，连接远程的tomcat
+					4-在.../conf中添加jmxremote.access和jmxremote.password文件
+					5-将服务器地址改为公网ip地址
+					6-设置阿里云安全策略和防火墙策略
+					7-启动tomcat，查看tomcat启动日志和端口监听
+					8-JMX中输入端口号、用户名、密码登录
+			主要功能
+				1-生成/读取堆内存快照
+				2-查看JVM参数和系统属性
+				3-查看运行中的虚拟机进程
+				4-生成/读取线程快照
+				5.程序资源的实时监控
+				6.其他功能
+					JMX代理连接
+					远程环境监控
+					CPU分析和内存分析
+		04-eclipse MAT
+			基本概述
+			获取堆dump文件
+				dump文件内容
+				两点说明
+				获取dump文件
+			分析堆dump文件
+				histogram
+					展示了各个类的实例数目以及这些实例的Shallow heap 或Retainedheap的总和
+				thread overview
+					查看系统中的Java线程
+					查看局部变量的信息
+				获得对象相互引用的关系
+					with outgoing references
+					with incoming references
+				浅堆与深堆
+					shallow heap
+					retained heap
+					补充：对象实际大小
+					练习
+					案例分析：StudentTrace
+				支配树
+			案例：Tomcat堆溢出分析
+				说明
+				分析过程
+		补充1：再谈内存泄漏
+			案例1
+				案例代码
+				分析
+				解决办法
+			案例2
+				案例代码
+				分析
+				解决办法
+		补充2：支持使用OQL语言查询对象信息
+			SELECT子句
+			FROM子句
+			WHERE子句
+			内置对象与方法
+		05-JProfiler
+			基本概述
+				介绍
+				特点
+				主要功能
+					1-方法调用
+						对方法调用的分析可以帮助您了解应用程序正在做什么，并找到提高其性能的方法
+					2-内存分配
+						通过分析堆上对象、引用链和垃圾收集能帮您修复内存泄漏问题，优化内存使用
+					3-线程和锁
+						JProfiler提供多种针对线程和锁的分析视图助您发现多线程问题
+					4-高级子系统
+						许多性能问题都发生在更高的语义级别上。例如，对于JDBC调用，您可能希望找出\n执行最慢的 SQL语句。JProfiler支持对这些子系统进行集成分析
+			安装与配置
+				下载与安装
+				JProfiler中配置IDEA
+				IDEA集成JProfiler
+			具体使用
+				数据采集方式
+					Instrumentation重构模式
+					Sampling抽样模式
+				遥感监测 Telemetries
+				内存视图 Live Memory
+				堆遍历 heap walker
+				cpu视图 cpu views
+				线程视图 threads
+				监视器&锁  Monitors&locks
+			案例分析
+				案例1
+				案例2
+		06-Arthas
+			基本概述
+				背景
+				概述
+				基于哪些工具开发而来
+				官方使用文档
+					https://arthas.aliyun.com/zh-cn/
+			安装与使用
+				安装
+				工程目录
+				启动
+				查看进程
+				查看日志
+					cat ~/logs/arthas/arthas.log
+				参看帮助
+					java -jar arthas-boot.jar -h
+				web console
+				退出
+			相关诊断指令
+				基础指令
+				jvm相关
+					dashboard
+					thread
+					jvm
+					其它
+				class/classloader相关
+					sc
+					sm
+					jad
+					mc 、redefine
+					classloader
+				monitor/watch/trace相关
+					monitor
+					watch
+					trace
+					stack
+					tt
+				其它
+					profiler/火焰图
+					options
+		07-Java Mission Control
+			历史
+			启动
+			概述
+			功能：实时监控 JVM 运行时的状态
+			Java Flight Recorder
+				事件类型
+				启动方式
+					方式1：使用-XX:StartFlightRecording=参数
+					方式2：使用jcmd的JFR.*子命令
+					方式3：JMC 的 JFR 插件
+				Java Flight Recorder 取样分析
+					代码
+					IO
+		08-其它工具
+			Flame Graphs（火焰图）
+			Tprofiler
+			Btrace
+			YourKit
+			JProbe
+			Spring Insight
+	03-JVM运行时参数
+		面试题
+		01-JVM参数选项类型
+			类型一：标准参数选项
+				特点
+					比较稳定，后续版本基本不会变化
+					以-开头
+				各种选项
+					运行java或者java -help可以看到所有的标准选项
+				补充内容：-server 与 -client
+			类型二：-X参数选项
+				特点
+					非标准化参数
+					功能还是比较稳定的。但官方说后续版本可能会变更
+					以-X开头
+				各种选项
+					运行java -X命令可以看到所有的X选项
+				JVM的JIT编译模式相关的选项
+					-Xint
+						禁用JIT，所有字节码都被解释执行，这个模式的速度最慢的
+					-Xcomp
+						所有字节码第一次使用就都被编译成本地代码，然后再执行
+					-Xmixed
+						混合模式，默认模式，让JIT根据程序运行的情况，有选择地将某些代码编译成本地代码
+				特别地
+					-Xmx -Xms -Xss属于 XX 参数？
+						-Xms<size>        设置初始 Java 堆大小，等价于-XX:InitialHeapSize
+						-Xmx<size>        设置最大 Java 堆大小，等价于-XX:MaxHeapSize
+						-Xss<size>        设置 Java 线程堆栈大小，-XX:ThreadStackSize
+			类型三：-XX参数选项
+				特点
+					非标准化参数
+					使用的最多的参数类型
+					这类选项属于实验性，不稳定
+					以-XX开头
+				作用
+					用于开发和调试JVM
+				分类
+					Boolean类型格式
+						-XX:+<option>  表示启用 option 属性
+						-XX:-<option>  表示禁用 option 属性
+						举例
+						说明：因为有的指令默认是开启的，所以可以使用-关闭
+					非Boolean类型格式（key-value类型）
+						子类型1：数值型格式-XX:<option>=<number>
+						子类型2：非数值型格式-XX:<name>=<string>
+				特别地
+					-XX:+PrintFlagsFinal
+						输出所有参数的名称和默认值
+						默认不包括Diagnostic和Experimental的参数
+						可以配合-XX:+UnlockDiagnosticVMOptions和-XX:UnlockExperimentalVMOptions使用
+					各种参数默认值（参考）
+		02-添加JVM参数选项
+			Eclipse
+			IDEA
+			运行jar包
+				java  -Xms50m -Xmx50m -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -jar  demo.jar
+			通过Tomcat运行war包
+				Linux系统下可以在tomcat/bin/catalina.sh中添加类似如下配置：\nJAVA_OPTS="-Xms512M -Xmx1024M"
+				Windows系统下在catalina.bat中添加类似如下配置：\nset "JAVA_OPTS=-Xms512M -Xmx1024M"
+			程序运行过程中
+				使用jinfo -flag <name>=<value> <pid>设置非Boolean类型参数
+				使用 jinfo -flag [+|-]<name> <pid>设置Boolean类型参数
+		03-常用的JVM参数选项
+			打印设置的XX选项及值
+				-XX:+PrintCommandLineFlags
+					可以让在程序运行前打印出用户手动设置或者JVM自动设置的XX选项
+				-XX:+PrintFlagsInitial
+					表示打印出所有XX选项的默认值
+				-XX:+PrintFlagsFinal
+					表示打印出XX选项在运行程序时生效的值
+				-XX:+PrintVMOptions
+					打印JVM的参数
+			堆、栈、方法区等内存大小设置
+				栈
+					-Xss128k
+						设置每个线程的栈大小为128k
+						等价于 -XX:ThreadStackSize=128k
+				堆内存
+					-Xms3550m
+						等价于-XX:InitialHeapSize，设置JVM初始堆内存为3550M
+					-Xmx3550m
+						等价于-XX:MaxHeapSize，设置JVM最大堆内存为3550M
+					-Xmn2g
+						设置年轻代大小为2G
+						官方推荐配置为整个堆大小的3/8
+					-XX:NewSize=1024m
+						设置年轻代初始值为1024M
+					-XX:MaxNewSize=1024m
+						设置年轻代最大值为1024M
+					-XX:SurvivorRatio=8
+						设置年轻代中Eden区与一个Survivor区的比值，默认为8
+					-XX:+UseAdaptiveSizePolicy
+						自动选择各区大小比例
+					-XX:NewRatio=4
+						设置老年代与年轻代（包括1个Eden和2个Survivor区）的比值
+					-XX:PretenureSizeThreadshold=1024
+						设置让大于此阈值的对象直接分配在老年代，单位为字节
+						只对Serial、ParNew收集器有效
+					-XX:MaxTenuringThreshold=15
+						默认值为15
+						新生代每次MinorGC后，还存活的对象年龄+1，当对象的年龄大于设置的这个值时就进入老年代
+					-XX:+PrintTenuringDistribution
+						让JVM在每次MinorGC后打印出当前使用的Survivor中对象的年龄分布
+					-XX:TargetSurvivorRatio
+						表示MinorGC结束后Survivor区域中占用空间的期望比例
+				方法区
+					永久代
+						-XX:PermSize=256m
+							设置永久代初始值为256M
+						-XX:MaxPermSize=256m
+							设置永久代最大值为256M
+					元空间
+						-XX:MetaspaceSize
+							初始空间大小
+						-XX:MaxMetaspaceSize
+							最大空间，默认没有限制
+						-XX:+UseCompressedOops
+							压缩对象指针
+						-XX:+UseCompressedClassPointers
+							压缩类指针
+						-XX:CompressedClassSpaceSize
+							设置Klass Metaspace的大小，默认1G
+				直接内存
+					-XX:MaxDirectMemorySize
+						指定DirectMemory容量，若未指定，则默认与Java堆最大值一样
+			OutofMemory相关的选项
+				-XX:+HeapDumpOnOutOfMemoryError
+					表示在内存出现OOM的时候，把Heap转存(Dump)到文件以便后续分析
+				-XX:+HeapDumpBeforeFullGC
+					表示在出现FullGC之前，生成Heap转储文件
+				-XX:HeapDumpPath=<path>
+					指定heap转存文件的存储路径
+				-XX:OnOutOfMemoryError
+					指定一个可行性程序或者脚本的路径，当发生OOM的时候，去执行这个脚本
+			垃圾收集器相关选项
+				查看默认垃圾收集器
+				Serial回收器
+				ParNew回收器
+				Parallel回收器
+				CMS回收器
+					补充参数
+					特别说明
+				G1回收器
+					Mixed GC调优参数
+				怎么选择垃圾回收器
+			GC日志相关选项
+				常用参数
+					-verbose:gc
+						输出gc日志信息，默认输出到标准输出
+						可以独立使用
+					-XX:+PrintGC
+						等同于-verbose:gc 表示打开简化的GC日志
+						可以独立使用
+					-XX:+PrintGCDetails
+						在发生垃圾回收时打印内存回收详细的日志，\n并在进程退出时输出当前内存各区域分配情况
+						可以独立使用
+					-XX:+PrintGCTimeStamps
+						输出GC发生时的时间戳
+						不可以独立使用，需要配合-XX:+PrintGCDetails使用
+					-XX:+PrintGCDateStamps
+						输出GC发生时的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800）
+						不可以独立使用，需要配合-XX:+PrintGCDetails使用
+					-XX:+PrintHeapAtGC
+						每一次GC前和GC后，都打印堆信息
+						可以独立使用
+					-Xloggc:<file>
+						把GC日志写入到一个文件中去，而不是打印到标准输出中
+				其他参数
+					-XX:+TraceClassLoading
+						监控类的加载
+					-XX:+PrintGCApplicationStoppedTime
+						打印GC时线程的停顿时间
+					-XX:+PrintGCApplicationConcurrentTime
+						垃圾收集之前打印出应用未中断的执行时间
+					-XX:+PrintReferenceGC
+						记录回收了多少种不同引用类型的引用
+					-XX:+PrintTenuringDistribution
+						让JVM在每次MinorGC后打印出当前使用的Survivor中对象的年龄分布
+					-XX:+UseGCLogFileRotation
+						启用GC日志文件的自动转储
+					-XX:NumberOfGClogFiles=1
+						GC日志文件的循环数目
+					-XX:GCLogFileSize=1M
+						控制GC日志文件的大小
+			其他参数
+				-XX:+DisableExplicitGC
+					禁止hotspot执行System.gc()，默认禁用
+				-XX:ReservedCodeCacheSize=<n>[g|m|k]、-XX:InitialCodeCacheSize=<n>[g|m|k]
+					指定代码缓存的大小
+				-XX:+UseCodeCacheFlushing
+					使用该参数让jvm放弃一些被编译的代码，\n避免代码缓存被占满时JVM切换到interpreted-only的情况
+				-XX:+DoEscapeAnalysis
+					开启逃逸分析
+				-XX:+UseBiasedLocking
+					开启偏向锁
+				-XX:+UseLargePages
+					开启使用大页面
+				-XX:+UseTLAB
+					使用TLAB，默认打开
+				-XX:+PrintTLAB
+					打印TLAB的使用情况
+				-XX:TLABSize
+					设置TLAB大小
+		04-按功能性质区分JVM参数选项
+		05-通过Java代码获取JVM参数
+			上篇中通过Runtime获取
