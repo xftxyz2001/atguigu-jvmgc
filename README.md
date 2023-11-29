@@ -34,6 +34,7 @@
 
 ## 软件下载
 - [JProfiler v11.0.2](https://pan.baidu.com/s/1Z-qjgjLxVi262WvYPlGB4Q) 提取码：iohg
+- [MindManager2022](https://github.com/xftxyz2001/ways/blob/main/MindManager2022.md)
 - [其他](https://txyz.lanzoue.com/b03qthcwf) 密码:88ka
 
 
